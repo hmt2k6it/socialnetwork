@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.Set;
 
 import jakarta.persistence.Id;
-
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -36,6 +36,7 @@ public class User {
     String country;
     String gender;
     String dob;
+    @ManyToMany
     Set<Role> roles;
     Date createdAt;
     Date updatedAt;
