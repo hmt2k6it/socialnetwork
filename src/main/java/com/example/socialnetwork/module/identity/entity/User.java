@@ -1,5 +1,6 @@
 package com.example.socialnetwork.module.identity.entity;
 
+import java.util.Date;
 import java.util.Set;
 
 import org.springframework.data.annotation.Id;
@@ -36,6 +37,6 @@ public class User {
     String gender;
     String dob;
     Set<Role> roles;
-    String createdAt;
-    String updatedAt;
+    Date createdAt;
+    Date updatedAt;
 }
