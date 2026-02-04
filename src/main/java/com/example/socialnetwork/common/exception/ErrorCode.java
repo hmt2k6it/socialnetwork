@@ -12,7 +12,9 @@ import lombok.AccessLevel;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public enum ErrorCode {
-    UNCATEGORIZED(000, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR);
+    UNCATEGORIZED(000, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+    USERNAME_EXIST(201, "Username already exists", HttpStatus.BAD_REQUEST),
+    ROLE_NOT_FOUND(202, "Role not found", HttpStatus.BAD_REQUEST);
 
     int code;
     String message;
