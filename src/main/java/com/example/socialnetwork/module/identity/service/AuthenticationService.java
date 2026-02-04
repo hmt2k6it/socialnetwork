@@ -60,17 +60,19 @@ public class AuthenticationService {
 
     private String generateToken(User user, boolean isRefreshToken) {
         JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS256);
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+        JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder()
                 .subject(user.getUserId())
                 .claim("username", user.getUsername())
                 .issuer("socialnetwork.com")
                 .issueTime(new Date())
                 .expirationTime(new Date(System.currentTimeMillis()
-                        + (isRefreshToken ? refreshTokenExpirationTime : accessTokenExpirationTime)))
-                .build();
+                        + (isRefreshToken ? refreshTokenExpirationTime : accessTokenExpirationTime)));
+
         if (!isRefreshToken) {
-            jwtClaimsSet.getClaims().put("scope", buildScope(user));
+            jwtClaimsSetBuilder.claim("scope", buildScope(user));
         }
+
+        JWTClaimsSet jwtClaimsSet = jwtClaimsSetBuilder.build();
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(jwsHeader, payload);
         try {
