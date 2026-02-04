@@ -41,11 +41,14 @@ public class UserControllerUnitTest {
 
     @BeforeEach
     void initData() {
-        request = new UserCreationRequest("john", "123456", "john@gmail.com", "123456789", "VN", "MALE", new Date());
+        request = new UserCreationRequest("john", "123456", "john", "john", "john@gmail.com", "123456789", "VN", "MALE",
+                new Date());
 
         userResponse = UserResponse.builder()
                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
                 .username("john")
+                .firstName("john")
+                .lastName("john")
                 .email("john@gmail.com")
                 .phoneNumber("123456789")
                 .country("VN")
@@ -64,6 +67,8 @@ public class UserControllerUnitTest {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.result.userId").value("cf0600f5-388d-4299-bddc-d57367b6670e"))
                 .andExpect(jsonPath("$.result.username").value("john"))
+                .andExpect(jsonPath("$.result.firstName").value("john"))
+                .andExpect(jsonPath("$.result.lastName").value("john"))
                 .andExpect(jsonPath("$.result.email").value("john@gmail.com"));
     }
 }

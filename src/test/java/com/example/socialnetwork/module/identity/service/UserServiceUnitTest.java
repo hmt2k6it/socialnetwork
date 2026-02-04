@@ -47,10 +47,13 @@ public class UserServiceUnitTest {
 
     @BeforeEach
     void initData() {
-        request = new UserCreationRequest("john", "123456", "john@gmail.com", "123456789", "VN", "MALE", null);
+        request = new UserCreationRequest("john", "123456", "john", "john", "john@gmail.com", "123456789", "VN", "MALE",
+                null);
         userResponse = UserResponse.builder()
                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
                 .username("john")
+                .firstName("john")
+                .lastName("john")
                 .email("john@gmail.com")
                 .build();
         user = User.builder()
