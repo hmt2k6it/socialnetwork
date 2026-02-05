@@ -1,5 +1,6 @@
 package com.example.socialnetwork.module.identity.service;
 
+import java.text.ParseException;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -10,15 +11,21 @@ import org.springframework.stereotype.Service;
 import com.example.socialnetwork.common.exception.AppException;
 import com.example.socialnetwork.common.exception.ErrorCode;
 import com.example.socialnetwork.module.identity.dto.request.AuthenticationRequest;
+import com.example.socialnetwork.module.identity.dto.request.IntrospectRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
+import com.example.socialnetwork.module.identity.dto.response.IntrospectResponse;
 import com.example.socialnetwork.module.identity.entity.User;
 import com.example.socialnetwork.module.identity.repository.UserRepository;
+import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -84,7 +91,29 @@ public class AuthenticationService {
         }
     }
 
+    public IntrospectResponse introspect(IntrospectRequest request) {
+        boolean isValid = verifyToken(request.getAccessToken());
+        return IntrospectResponse.builder()
+                .isValid(isValid)
+                .build();
+    }
+
+    private boolean verifyToken(String token) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWSVerifier jwsVerifier = new MACVerifier(secretKey.getBytes());
+            Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+            if (expirationTime.before(new Date()) || !signedJWT.verify(jwsVerifier)) {
+                return false;
+            }
+            return true;
+        } catch (ParseException | JOSEException e) {
+            return false;
+        }
+    }
+
     private String buildScope(User user) {
         return user.getRoles().stream().map(role -> "ROLE_" + role.getName()).collect(Collectors.joining(" "));
     }
+
 }
