@@ -16,7 +16,8 @@ public enum ErrorCode {
     USERNAME_EXIST(201, "Username already exists", HttpStatus.BAD_REQUEST),
     ROLE_NOT_FOUND(202, "Role not found", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(203, "User not found", HttpStatus.BAD_REQUEST),
-    PASSWORD_INCORRECT(204, "Password incorrect", HttpStatus.BAD_REQUEST);
+    PASSWORD_INCORRECT(204, "Password incorrect", HttpStatus.BAD_REQUEST),
+    INVALID_ACCESS_TOKEN(205, "Invalid access token", HttpStatus.BAD_REQUEST);
 
     int code;
     String message;
