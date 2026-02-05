@@ -1,0 +1,29 @@
+name: Java CI with Maven
+
+# Kích hoạt khi có code push hoặc tạo PR vào main và dev
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Tải code từ kho về máy ảo của GitHub
+    - uses: actions/checkout@v4
+
+    # 2. Cài đặt môi trường Java (ở đây mình để Java 17, bạn sửa thành 21 nếu cần)
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    # 3. Chạy lệnh test và build của Maven
+    # Lệnh này sẽ chạy tất cả các @Test trong code của bạn
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
