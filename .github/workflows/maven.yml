@@ -3,9 +3,9 @@ name: Java CI with Maven
 # Kích hoạt khi có code push hoặc tạo PR vào main và dev
 on:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "develop" ]
   workflow_dispatch:
 
 jobs:
