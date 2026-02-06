@@ -13,7 +13,7 @@ spring:
     show-sql: true
 
 jwt:
-  secret: ${JWT_SECRET}
+  signerKey: ${JWT_SECRET}
   access-token:
     expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME}
   refresh-token:

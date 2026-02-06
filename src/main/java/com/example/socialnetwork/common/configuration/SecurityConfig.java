@@ -22,7 +22,7 @@ import lombok.AccessLevel;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SecurityConfig {
     CustomJwtDecoder customJwtDecoder;
-    String[] PUBLIC_ENDPOINT = { "/api/v1/auth/login", "/api/v1/auth/register" };
+    String[] PUBLIC_ENDPOINT = { "/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh-token" };
 
     @Bean
     PasswordEncoder passwordEncoder() {

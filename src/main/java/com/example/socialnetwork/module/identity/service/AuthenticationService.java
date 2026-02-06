@@ -2,14 +2,18 @@ package com.example.socialnetwork.module.identity.service;
 
 import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
+import com.example.socialnetwork.module.identity.entity.RefreshToken;
 import com.example.socialnetwork.module.identity.entity.Role;
 import com.example.socialnetwork.module.identity.mapper.UserMapper;
+import com.example.socialnetwork.module.identity.repository.RefreshTokenRepository;
 import com.example.socialnetwork.module.identity.repository.RoleRepository;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,15 +21,20 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.socialnetwork.common.exception.AppException;
 import com.example.socialnetwork.common.exception.ErrorCode;
 import com.example.socialnetwork.module.identity.dto.request.AuthenticationRequest;
+import com.example.socialnetwork.module.identity.dto.request.LogoutRequest;
+import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
 import com.example.socialnetwork.module.identity.entity.User;
 import com.example.socialnetwork.module.identity.repository.UserRepository;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +48,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AuthenticationService {
     @NonFinal
-    @Value("${jwt.secret}")
-    String secretKey;
+    @Value("${jwt.signerKey}")
+    String signerKey;
     @NonFinal
     @Value("${jwt.access-token.expiration-time}")
     long accessTokenExpirationTime;
@@ -52,6 +61,8 @@ public class AuthenticationService {
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
     UserMapper userMapper;
+    RefreshTokenRepository refreshTokenRepository;
+    CacheManager cacheManager;
 
     @Transactional
     public AuthenticationResponse register(UserCreationRequest request) {
@@ -62,11 +73,9 @@ public class AuthenticationService {
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRoles(Set.of(role));
-        return AuthenticationResponse.builder()
-                .accessToken(generateToken(user, false))
-                .refreshToken(generateToken(user, true))
-                .user(userMapper.toUserResponse(userRepository.save(user)))
-                .build();
+        user = userRepository.save(user);
+
+        return generateAuthenticationResponse(user, true);
     }
 
     @Transactional
@@ -76,24 +85,84 @@ public class AuthenticationService {
         if (!passwordEncoder.matches(authenticationRequest.getPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.PASSWORD_INCORRECT);
         }
-        String accessToken = generateToken(user, false);
-        String refreshToken = generateToken(user, true);
+        return generateAuthenticationResponse(user, true);
+    }
+
+    @Transactional
+    public void logout(LogoutRequest request) {
+        String accessToken = request.getAccessToken();
+        String refreshToken = request.getRefreshToken();
+        try {
+            SignedJWT refreshTokenSignedJWT = SignedJWT.parse(refreshToken);
+            String refreshTokenJti = refreshTokenSignedJWT.getJWTClaimsSet().getJWTID();
+            refreshTokenRepository.deleteById(refreshTokenJti);
+
+            SignedJWT accessTokenSignedJWT = SignedJWT.parse(accessToken);
+            String accessTokenJti = accessTokenSignedJWT.getJWTClaimsSet().getJWTID();
+            if (cacheManager.getCache("invalidated_tokens") != null) {
+                cacheManager.getCache("invalidated_tokens").put(accessTokenJti, accessTokenJti);
+            }
+            log.info("Logout successfully");
+        } catch (Exception e) {
+            log.error("Error when logout", e);
+        }
+    }
+
+    @Transactional
+    public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+        try {
+            SignedJWT refreshTokenSignedJWT = SignedJWT.parse(refreshToken);
+            JWSVerifier jwsVerifier = new MACVerifier(signerKey.getBytes());
+            if (!refreshTokenSignedJWT.verify(jwsVerifier)) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+            String refreshTokenJti = refreshTokenSignedJWT.getJWTClaimsSet().getJWTID();
+            RefreshToken refreshTokenEntity = refreshTokenRepository.findById(refreshTokenJti)
+                    .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+            if (refreshTokenEntity.getExpiryDate().before(new Date())) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+            refreshTokenRepository.deleteById(refreshTokenJti);
+            User user = refreshTokenEntity.getUser();
+            return generateAuthenticationResponse(user, false);
+        } catch (Exception e) {
+            log.error("Error when refresh token", e);
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+    }
+
+    private AuthenticationResponse generateAuthenticationResponse(User user, boolean hasUser) {
+        String accessJti = UUID.randomUUID().toString();
+        Date accessTokenExpiryDate = new Date(System.currentTimeMillis() + accessTokenExpirationTime * 1000);
+        String accessToken = generateToken(user, false, accessJti, accessTokenExpiryDate);
+
+        String refreshJti = UUID.randomUUID().toString();
+        Date refreshExpiryDate = new Date(System.currentTimeMillis() + refreshTokenExpirationTime * 1000);
+        String refreshToken = generateToken(user, true, refreshJti, refreshExpiryDate);
+
+        refreshTokenRepository.save(RefreshToken.builder()
+                .jti(refreshJti)
+                .user(user)
+                .expiryDate(refreshExpiryDate)
+                .build());
+
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .user(userMapper.toUserResponse(user))
+                .user(hasUser ? userMapper.toUserResponse(user) : null)
                 .build();
     }
 
-    private String generateToken(User user, boolean isRefreshToken) {
+    private String generateToken(User user, boolean isRefreshToken, String jti, Date expiryDate) {
         JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS256);
         JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder()
+                .jwtID(jti)
                 .subject(user.getUserId())
                 .claim("username", user.getUsername())
                 .issuer("socialnetwork.com")
                 .issueTime(new Date())
-                .expirationTime(new Date(System.currentTimeMillis()
-                        + (isRefreshToken ? refreshTokenExpirationTime : accessTokenExpirationTime)));
+                .expirationTime(expiryDate);
 
         if (!isRefreshToken) {
             jwtClaimsSetBuilder.claim("scope", buildScope(user));
@@ -103,7 +172,7 @@ public class AuthenticationService {
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
         JWSObject jwsObject = new JWSObject(jwsHeader, payload);
         try {
-            jwsObject.sign(new MACSigner(secretKey.getBytes()));
+            jwsObject.sign(new MACSigner(signerKey.getBytes()));
             return jwsObject.serialize();
         } catch (Exception e) {
             log.error("Error generating token", e);
