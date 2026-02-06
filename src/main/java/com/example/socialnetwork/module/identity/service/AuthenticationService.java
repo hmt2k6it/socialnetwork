@@ -1,11 +1,18 @@
 package com.example.socialnetwork.module.identity.service;
 
 import java.util.Date;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
+import com.example.socialnetwork.module.identity.entity.Role;
+import com.example.socialnetwork.module.identity.mapper.UserMapper;
+import com.example.socialnetwork.module.identity.repository.RoleRepository;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.socialnetwork.common.exception.AppException;
 import com.example.socialnetwork.common.exception.ErrorCode;
@@ -43,7 +50,26 @@ public class AuthenticationService {
 
     UserRepository userRepository;
     PasswordEncoder passwordEncoder;
+    RoleRepository roleRepository;
+    UserMapper userMapper;
 
+    @Transactional
+    public AuthenticationResponse register(UserCreationRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new AppException(ErrorCode.USERNAME_EXIST);
+        }
+        Role role = roleRepository.findById("USER").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        User user = userMapper.toUser(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRoles(Set.of(role));
+        return AuthenticationResponse.builder()
+                .accessToken(generateToken(user, false))
+                .refreshToken(generateToken(user, true))
+                .user(userMapper.toUserResponse(userRepository.save(user)))
+                .build();
+    }
+
+    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest authenticationRequest) {
         User user = userRepository.findByUsername(authenticationRequest.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
@@ -55,6 +81,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .user(userMapper.toUserResponse(user))
                 .build();
     }
 
