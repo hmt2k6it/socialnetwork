@@ -1,6 +1,6 @@
 package com.example.socialnetwork.module.identity.dto.request;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -23,5 +23,5 @@ public class UserCreationRequest {
     String phoneNumber;
     String country;
     String gender;
-    Date dob;
+    LocalDate dob;
 }

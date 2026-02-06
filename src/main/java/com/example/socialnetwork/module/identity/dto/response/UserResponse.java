@@ -1,6 +1,6 @@
 package com.example.socialnetwork.module.identity.dto.response;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Set;
 
 import lombok.AccessLevel;
@@ -26,8 +26,8 @@ public class UserResponse {
     String bio;
     String country;
     String gender;
-    Date dob;
+    LocalDate dob;
     Set<String> roles;
-    Date createdAt;
-    Date updatedAt;
+    LocalDate createdAt;
+    LocalDate updatedAt;
 }

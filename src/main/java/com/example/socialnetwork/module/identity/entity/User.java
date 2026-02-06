@@ -1,7 +1,10 @@
 package com.example.socialnetwork.module.identity.entity;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Set;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
@@ -37,9 +40,11 @@ public class User {
     String bio;
     String country;
     String gender;
-    String dob;
+    LocalDate dob;
     @ManyToMany
     Set<Role> roles;
-    Date createdAt;
-    Date updatedAt;
+    @CreationTimestamp
+    LocalDate createdAt;
+    @UpdateTimestamp
+    LocalDate updatedAt;
 }
