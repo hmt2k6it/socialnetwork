@@ -20,3 +20,6 @@ jwt:
     expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME}
 otp:
   expiration-time: ${OTP_EXPIRATION_TIME}
+
+validation:
+    password-regex: ${VALIDATION_USER_PASSWORD_REGEX:^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$}
