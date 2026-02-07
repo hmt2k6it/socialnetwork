@@ -9,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import lombok.AccessLevel;
@@ -19,7 +20,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-@Entity(name = "users")
+@Entity
+@Table(name = "users")
 @Getter
 @Setter
 @AllArgsConstructor

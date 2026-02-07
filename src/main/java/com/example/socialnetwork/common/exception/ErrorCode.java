@@ -12,8 +12,8 @@ import lombok.AccessLevel;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public enum ErrorCode {
-        UNCATEGORIZED(000, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
-        INVALID_KEY(001, "Invalid key", HttpStatus.BAD_REQUEST),
+        UNCATEGORIZED(1000, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+        INVALID_KEY(1001, "Invalid key", HttpStatus.BAD_REQUEST),
         USERNAME_EXIST(201, "Username already exists", HttpStatus.BAD_REQUEST),
         ROLE_NOT_FOUND(202, "Role not found", HttpStatus.BAD_REQUEST),
         USER_NOT_FOUND(203, "User not found", HttpStatus.BAD_REQUEST),
