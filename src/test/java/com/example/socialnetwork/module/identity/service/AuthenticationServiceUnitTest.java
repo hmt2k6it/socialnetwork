@@ -90,23 +90,26 @@ public class AuthenticationServiceUnitTest {
     }
 
     void requestDataSetup() {
-        registerRequest = new UserCreationRequest("john", "123456", "john", "john", "john@gmail.com", "123456789", "VN",
-                "MALE", null);
-        authRequest = new AuthenticationRequest("john", "123456");
+        registerRequest = new UserCreationRequest("nlnq28062007", "Nlnq28062007!", "Nguyen Lam Nhu", "Quynh",
+                "nlqn28062007@gmail.com", "03475647566", "Binh Duong", "FEMALE", null);
+        authRequest = new AuthenticationRequest("nlnq28062007", "Nlnq28062007@gmail.com");
 
         role = Role.builder().name("USER").build();
 
         user = User.builder()
                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
-                .username("john")
+                .username("nlnq28062007")
                 .password("encoded_password")
-                .email("john@gmail.com")
+                .email("Nlnq28062007@gmail.com")
+                .phoneNumber("03475647566")
+                .country("Binh Duong")
+                .gender("FEMALE")
                 .roles(Set.of(role))
                 .build();
 
         userResponse = UserResponse.builder()
                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
-                .username("john")
+                .username("nlnq28062007")
                 .build();
 
         authenticationResponse = AuthenticationResponse.builder()
@@ -121,9 +124,10 @@ public class AuthenticationServiceUnitTest {
                 .expiryDate(new Date(System.currentTimeMillis() + 10000))
                 .build();
 
-        forgetPasswordRequest = new ForgetPasswordRequest("john@gmail.com");
+        forgetPasswordRequest = new ForgetPasswordRequest("nlnq28062007@gmail.com");
 
-        resetPasswordRequest = new ResetPasswordRequest("john@gmail.com", "123456", "newpass", "newpass");
+        resetPasswordRequest = new ResetPasswordRequest("nlnq28062007@gmail.com", "123456", "Nlnq28062007!",
+                "Nlnq28062007!");
 
         String validToken = generateValidToken();
         logoutRequest = LogoutRequest.builder()
@@ -160,7 +164,7 @@ public class AuthenticationServiceUnitTest {
         var response = authenticationService.register(registerRequest);
 
         assertThat(response.getUser().getUserId()).isEqualTo("cf0600f5-388d-4299-bddc-d57367b6670e");
-        assertThat(response.getUser().getUsername()).isEqualTo("john");
+        assertThat(response.getUser().getUsername()).isEqualTo("nlnq28062007");
         assertThat(response.getAccessToken()).isNotNull();
         assertThat(response.getRefreshToken()).isNotNull();
     }
@@ -267,21 +271,21 @@ public class AuthenticationServiceUnitTest {
 
     @Test
     void resetPassword_validRequest_success() {
-        when(otpCache.getIfPresent("john@gmail.com")).thenReturn("123456");
+        when(otpCache.getIfPresent("nlnq28062007@gmail.com")).thenReturn("123456");
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
-        when(passwordEncoder.encode(anyString())).thenReturn("new_encoded_password");
+        when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
 
         String response = authenticationService.resetPassword(resetPasswordRequest);
 
         assertThat(response).isEqualTo("Password reset successfully");
 
-        verify(otpCache).invalidate("john@gmail.com");
+        verify(otpCache).invalidate("nlnq28062007@gmail.com");
         verify(userRepository).save(user);
     }
 
     @Test
     void resetPassword_invalidOtp_fail() {
-        when(otpCache.getIfPresent("john@gmail.com")).thenReturn("999999");
+        when(otpCache.getIfPresent("nlnq28062007@gmail.com")).thenReturn(null);
 
         var exception = assertThrows(AppException.class,
                 () -> authenticationService.resetPassword(resetPasswordRequest));

@@ -50,11 +50,12 @@ public class AuthenticationControllerUnitTest {
 
         @BeforeEach
         void initData() {
-                registerRequest = new UserCreationRequest("john", "123456", "john", "john", "john@gmail.com",
-                                "123456789", "VN",
-                                "MALE", null);
+                registerRequest = new UserCreationRequest("nlnq28062007", "Nlnq28062007!", "Nguyen Lam Nhu", "Quynh",
+                                "nlnq28062007@gmail.com",
+                                "0369874561", "VN",
+                                "FEMALE", null);
 
-                authRequest = new AuthenticationRequest("john", "123456");
+                authRequest = new AuthenticationRequest("nlnq28062007", "Nlnq28062007!");
 
                 refreshTokenRequest = RefreshTokenRequest.builder()
                                 .refreshToken("refresh_token")
@@ -69,14 +70,15 @@ public class AuthenticationControllerUnitTest {
                                 .refreshToken("refresh_token")
                                 .user(UserResponse.builder()
                                                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
-                                                .username("john")
-                                                .firstName("john")
-                                                .lastName("john")
-                                                .email("john@gmail.com")
+                                                .username("nlnq28062007")
+                                                .firstName("Nguyen Lam Nhu")
+                                                .lastName("Quynh")
+                                                .email("nlnq28062007@gmail.com")
                                                 .build())
                                 .build();
-                forgetPasswordRequest = new ForgetPasswordRequest("john@gmail.com");
-                resetPasswordRequest = new ResetPasswordRequest("john@gmail.com", "otp", "123456", "");
+                forgetPasswordRequest = new ForgetPasswordRequest("nlnq28062007@gmail.com");
+                resetPasswordRequest = new ResetPasswordRequest("nlnq28062007@gmail.com", "otp", "Nlnq28062007!",
+                                "Nlnq28062007!");
 
         }
 
