@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
 
@@ -21,14 +22,24 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.example.socialnetwork.common.exception.AppException;
 import com.example.socialnetwork.common.exception.ErrorCode;
 import com.example.socialnetwork.module.identity.dto.request.AuthenticationRequest;
+import com.example.socialnetwork.module.identity.dto.request.LogoutRequest;
+import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest;
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
 import com.example.socialnetwork.module.identity.dto.response.UserResponse;
+import com.example.socialnetwork.module.identity.entity.RefreshToken;
 import com.example.socialnetwork.module.identity.entity.Role;
 import com.example.socialnetwork.module.identity.entity.User;
 import com.example.socialnetwork.module.identity.mapper.UserMapper;
+import com.example.socialnetwork.module.identity.repository.RefreshTokenRepository;
 import com.example.socialnetwork.module.identity.repository.RoleRepository;
 import com.example.socialnetwork.module.identity.repository.UserRepository;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jwt.JWTClaimsSet;
 
 @ExtendWith(MockitoExtension.class)
 public class AuthenticationServiceUnitTest {
@@ -40,6 +51,8 @@ public class AuthenticationServiceUnitTest {
     UserMapper userMapper;
     @Mock
     PasswordEncoder passwordEncoder;
+    @Mock
+    RefreshTokenRepository refreshTokenRepository;
 
     @InjectMocks
     AuthenticationService authenticationService;
@@ -50,12 +63,14 @@ public class AuthenticationServiceUnitTest {
     UserResponse userResponse;
     User user;
     Role role;
+    RefreshToken refreshToken;
+    LogoutRequest logoutRequest;
 
     @BeforeEach
     void initData() {
         requestDataSetup();
 
-        ReflectionTestUtils.setField(authenticationService, "secretKey", "12345678901234567890123456789012");
+        ReflectionTestUtils.setField(authenticationService, "signerKey", "12345678901234567890123456789012");
         ReflectionTestUtils.setField(authenticationService, "accessTokenExpirationTime", 3600L);
         ReflectionTestUtils.setField(authenticationService, "refreshTokenExpirationTime", 7200L);
     }
@@ -64,6 +79,11 @@ public class AuthenticationServiceUnitTest {
         registerRequest = new UserCreationRequest("john", "123456", "john", "john", "john@gmail.com", "123456789", "VN",
                 "MALE", null);
         authRequest = new AuthenticationRequest("john", "123456");
+
+        logoutRequest = LogoutRequest.builder()
+                .accessToken("access_token")
+                .refreshToken("refresh_token")
+                .build();
 
         role = Role.builder().name("USER").build();
 
@@ -82,6 +102,10 @@ public class AuthenticationServiceUnitTest {
                 .accessToken("access_token")
                 .refreshToken("refresh_token")
                 .build();
+        refreshToken = RefreshToken.builder()
+                .jti("refresh_token_jti")
+                .user(user)
+                .build();
     }
 
     @Test
@@ -91,6 +115,7 @@ public class AuthenticationServiceUnitTest {
         when(userMapper.toUser(any(UserCreationRequest.class))).thenReturn(user);
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
         when(userRepository.save(any(User.class))).thenReturn(user);
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(refreshToken);
         when(userMapper.toUserResponse(any(User.class))).thenReturn(userResponse);
 
         var response = authenticationService.register(registerRequest);
@@ -150,4 +175,57 @@ public class AuthenticationServiceUnitTest {
 
         assertThat(exception.getErrorCode().getCode()).isEqualTo(ErrorCode.PASSWORD_INCORRECT.getCode());
     }
+
+    @Test
+    void logout_validRequest_success() {
+        authenticationService.logout(logoutRequest);
+    }
+
+    private String generateToken() {
+        try {
+            JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.HS256).build();
+            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                    .jwtID("refresh_token_jti")
+                    .expirationTime(new Date(System.currentTimeMillis() + 3600000))
+                    .build();
+            Payload payload = new Payload(claimsSet.toJSONObject());
+            JWSObject jwsObject = new JWSObject(header, payload);
+            jwsObject.sign(new MACSigner("12345678901234567890123456789012".getBytes()));
+            return jwsObject.serialize();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    @Test
+    void refreshToken_validRequest_success() {
+        String validToken = generateToken();
+        RefreshTokenRequest request = RefreshTokenRequest.builder()
+                .refreshToken(validToken)
+                .build();
+
+        refreshToken.setExpiryDate(new java.util.Date(System.currentTimeMillis() + 10000));
+
+        when(refreshTokenRepository.findById(anyString())).thenReturn(Optional.of(refreshToken));
+        when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(refreshToken);
+
+        var response = authenticationService.refreshToken(request);
+
+        assertThat(response.getAccessToken()).isNotNull();
+        assertThat(response.getRefreshToken()).isNotNull();
+    }
+
+    @Test
+    void refreshToken_tokenNotFound_fail() {
+        String validToken = generateToken();
+        RefreshTokenRequest request = RefreshTokenRequest.builder()
+                .refreshToken(validToken)
+                .build();
+        when(refreshTokenRepository.findById(anyString())).thenReturn(Optional.empty());
+
+        var exception = assertThrows(AppException.class, () -> authenticationService.refreshToken(request));
+
+        assertThat(exception.getErrorCode().getCode()).isEqualTo(ErrorCode.UNAUTHENTICATED.getCode());
+    }
+
 }

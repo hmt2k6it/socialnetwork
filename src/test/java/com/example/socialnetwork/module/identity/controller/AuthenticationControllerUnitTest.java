@@ -16,6 +16,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.socialnetwork.module.identity.dto.request.AuthenticationRequest;
+import com.example.socialnetwork.module.identity.dto.request.LogoutRequest;
+import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest;
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
 import com.example.socialnetwork.module.identity.dto.response.UserResponse;
@@ -38,6 +40,8 @@ public class AuthenticationControllerUnitTest {
 
         private UserCreationRequest registerRequest;
         private AuthenticationRequest authRequest;
+        private RefreshTokenRequest refreshTokenRequest;
+        private LogoutRequest logoutRequest;
         private AuthenticationResponse authResponse;
 
         @BeforeEach
@@ -47,6 +51,14 @@ public class AuthenticationControllerUnitTest {
                                 "MALE", null);
 
                 authRequest = new AuthenticationRequest("john", "123456");
+
+                refreshTokenRequest = RefreshTokenRequest.builder()
+                                .refreshToken("refresh_token")
+                                .build();
+
+                logoutRequest = LogoutRequest.builder()
+                                .refreshToken("refresh_token")
+                                .build();
 
                 authResponse = AuthenticationResponse.builder()
                                 .accessToken("access_token")
@@ -59,6 +71,7 @@ public class AuthenticationControllerUnitTest {
                                                 .email("john@gmail.com")
                                                 .build())
                                 .build();
+
         }
 
         @Test
@@ -84,6 +97,38 @@ public class AuthenticationControllerUnitTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code").value(200))
                                 .andExpect(jsonPath("$.result.accessToken").value("access_token"))
-                                .andExpect(jsonPath("$.result.refreshToken").value("refresh_token"));
+                                .andExpect(jsonPath("$.result.refreshToken").value("refresh_token"))
+                                .andExpect(jsonPath("$.result.user.userId")
+                                                .value("cf0600f5-388d-4299-bddc-d57367b6670e"));
+        }
+
+        @Test
+        void refreshToken_validRequest_success() throws Exception {
+                AuthenticationResponse refreshResponse = AuthenticationResponse.builder()
+                                .accessToken("access_token")
+                                .refreshToken("refresh_token")
+                                .user(null)
+                                .build();
+                when(authenticationService.refreshToken(any(RefreshTokenRequest.class))).thenReturn(refreshResponse);
+
+                mockMvc.perform(post("/api/v1/auth/refresh-token")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(refreshTokenRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.result.accessToken").value("access_token"))
+                                .andExpect(jsonPath("$.result.refreshToken").value("refresh_token"))
+                                .andExpect(jsonPath("$.result.user").doesNotExist());
+        }
+
+        @Test
+        void logout_validRequest_success() throws Exception {
+                authenticationService.logout(logoutRequest);
+
+                mockMvc.perform(post("/api/v1/auth/logout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(logoutRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200));
         }
 }
