@@ -17,7 +17,10 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(202, "Role not found", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(203, "User not found", HttpStatus.BAD_REQUEST),
     PASSWORD_INCORRECT(204, "Password incorrect", HttpStatus.BAD_REQUEST),
-    UNAUTHENTICATED(205, "Unauthenticated", HttpStatus.UNAUTHORIZED);
+    UNAUTHENTICATED(205, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    OTP_EXPIRED(206, "OTP expired", HttpStatus.BAD_REQUEST),
+    INVALID_OTP(207, "Invalid OTP", HttpStatus.BAD_REQUEST),
+    PASSWORD_NOT_MATCH(208, "Password not match", HttpStatus.BAD_REQUEST);
 
     int code;
     String message;

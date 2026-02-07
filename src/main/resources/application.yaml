@@ -18,3 +18,5 @@ jwt:
     expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME}
   refresh-token:
     expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME}
+otp:
+  expiration-time: ${OTP_EXPIRATION_TIME}

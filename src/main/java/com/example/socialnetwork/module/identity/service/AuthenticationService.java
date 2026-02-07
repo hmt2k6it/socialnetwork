@@ -1,5 +1,6 @@
 package com.example.socialnetwork.module.identity.service;
 
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
@@ -21,11 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.socialnetwork.common.exception.AppException;
 import com.example.socialnetwork.common.exception.ErrorCode;
 import com.example.socialnetwork.module.identity.dto.request.AuthenticationRequest;
+import com.example.socialnetwork.module.identity.dto.request.ForgetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.LogoutRequest;
 import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest;
+import com.example.socialnetwork.module.identity.dto.request.ResetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
 import com.example.socialnetwork.module.identity.entity.User;
 import com.example.socialnetwork.module.identity.repository.UserRepository;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSObject;
@@ -63,6 +67,7 @@ public class AuthenticationService {
     UserMapper userMapper;
     RefreshTokenRepository refreshTokenRepository;
     CacheManager cacheManager;
+    Cache<String, String> otpCache;
 
     @Transactional
     public AuthenticationResponse register(UserCreationRequest request) {
@@ -132,6 +137,33 @@ public class AuthenticationService {
         }
     }
 
+    public String forgetPassword(ForgetPasswordRequest request) {
+        String email = request.getEmail();
+        if (userRepository.existsByEmail(email)) {
+            String otp = generateOtp();
+            otpCache.put(email, otp);
+            log.info("OTP: {}", otp);
+            // Send OTP to email
+        }
+        return "If user exists, OTP has been sent to your email";
+    }
+
+    @Transactional
+    public String resetPassword(ResetPasswordRequest request) {
+        String email = request.getEmail();
+        String otp = request.getOtp();
+        var cache = otpCache.getIfPresent(email);
+        if (cache == null || !cache.equals(otp)) {
+            throw new AppException(ErrorCode.INVALID_OTP);
+        }
+        otpCache.invalidate(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+        return "Password reset successfully";
+    }
+
     private AuthenticationResponse generateAuthenticationResponse(User user, boolean hasUser) {
         String accessJti = UUID.randomUUID().toString();
         Date accessTokenExpiryDate = new Date(System.currentTimeMillis() + accessTokenExpirationTime * 1000);
@@ -182,5 +214,11 @@ public class AuthenticationService {
 
     private String buildScope(User user) {
         return user.getRoles().stream().map(role -> "ROLE_" + role.getName()).collect(Collectors.joining(" "));
+    }
+
+    private String generateOtp() {
+        SecureRandom random = new SecureRandom();
+        int number = random.nextInt(1000000);
+        return String.format("%06d", number);
     }
 }
