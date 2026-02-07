@@ -1,16 +1,23 @@
 package com.example.socialnetwork.common.exception;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.example.socialnetwork.common.dto.response.ApiResponse;
 
+import jakarta.validation.ConstraintViolation;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class GlobalException {
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException e) {
@@ -19,6 +26,29 @@ public class GlobalException {
                 .body(ApiResponse.<Void>builder()
                         .code(errorCode.getCode())
                         .message(errorCode.getMessage())
+                        .build());
+    }
+
+    @SuppressWarnings("unchecked")
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        String enumKey = e.getBindingResult().getFieldError().getDefaultMessage();
+        ErrorCode errorCode = ErrorCode.INVALID_KEY;
+        Map<String, Object> attributes = new HashMap<>();
+        try {
+            errorCode = ErrorCode.valueOf(enumKey);
+
+            var constraintViolation = e.getBindingResult().getAllErrors().getFirst()
+                    .unwrap(ConstraintViolation.class);
+
+            attributes = constraintViolation.getConstraintDescriptor().getAttributes();
+        } catch (IllegalArgumentException exception) {
+        }
+        var message = String.format(errorCode.getMessage(), attributes.get("min"), attributes.get("max"));
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.<Void>builder()
+                        .code(errorCode.getCode())
+                        .message(message)
                         .build());
     }
 }
