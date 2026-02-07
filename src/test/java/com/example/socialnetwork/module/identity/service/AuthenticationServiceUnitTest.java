@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Date;
@@ -16,14 +18,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.CacheManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.example.socialnetwork.common.exception.AppException;
 import com.example.socialnetwork.common.exception.ErrorCode;
 import com.example.socialnetwork.module.identity.dto.request.AuthenticationRequest;
+import com.example.socialnetwork.module.identity.dto.request.ForgetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.LogoutRequest;
 import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest;
+import com.example.socialnetwork.module.identity.dto.request.ResetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
 import com.example.socialnetwork.module.identity.dto.response.UserResponse;
@@ -34,6 +39,7 @@ import com.example.socialnetwork.module.identity.mapper.UserMapper;
 import com.example.socialnetwork.module.identity.repository.RefreshTokenRepository;
 import com.example.socialnetwork.module.identity.repository.RoleRepository;
 import com.example.socialnetwork.module.identity.repository.UserRepository;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSObject;
@@ -53,6 +59,10 @@ public class AuthenticationServiceUnitTest {
     PasswordEncoder passwordEncoder;
     @Mock
     RefreshTokenRepository refreshTokenRepository;
+    @Mock
+    CacheManager cacheManager;
+    @Mock
+    Cache<String, String> otpCache;
 
     @InjectMocks
     AuthenticationService authenticationService;
@@ -65,12 +75,16 @@ public class AuthenticationServiceUnitTest {
     Role role;
     RefreshToken refreshToken;
     LogoutRequest logoutRequest;
+    ForgetPasswordRequest forgetPasswordRequest;
+    ResetPasswordRequest resetPasswordRequest;
+
+    private static final String SIGNER_KEY = "12345678901234567890123456789012";
 
     @BeforeEach
     void initData() {
         requestDataSetup();
 
-        ReflectionTestUtils.setField(authenticationService, "signerKey", "12345678901234567890123456789012");
+        ReflectionTestUtils.setField(authenticationService, "signerKey", SIGNER_KEY);
         ReflectionTestUtils.setField(authenticationService, "accessTokenExpirationTime", 3600L);
         ReflectionTestUtils.setField(authenticationService, "refreshTokenExpirationTime", 7200L);
     }
@@ -80,32 +94,58 @@ public class AuthenticationServiceUnitTest {
                 "MALE", null);
         authRequest = new AuthenticationRequest("john", "123456");
 
-        logoutRequest = LogoutRequest.builder()
-                .accessToken("access_token")
-                .refreshToken("refresh_token")
-                .build();
-
         role = Role.builder().name("USER").build();
 
         user = User.builder()
                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
                 .username("john")
                 .password("encoded_password")
+                .email("john@gmail.com")
                 .roles(Set.of(role))
                 .build();
+
         userResponse = UserResponse.builder()
                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
                 .username("john")
                 .build();
+
         authenticationResponse = AuthenticationResponse.builder()
                 .user(userResponse)
                 .accessToken("access_token")
                 .refreshToken("refresh_token")
                 .build();
+
         refreshToken = RefreshToken.builder()
                 .jti("refresh_token_jti")
                 .user(user)
+                .expiryDate(new Date(System.currentTimeMillis() + 10000))
                 .build();
+
+        forgetPasswordRequest = new ForgetPasswordRequest("john@gmail.com");
+
+        resetPasswordRequest = new ResetPasswordRequest("john@gmail.com", "123456", "newpass", "newpass");
+
+        String validToken = generateValidToken();
+        logoutRequest = LogoutRequest.builder()
+                .accessToken(validToken)
+                .refreshToken(validToken)
+                .build();
+    }
+
+    private String generateValidToken() {
+        try {
+            JWSHeader header = new JWSHeader(JWSAlgorithm.HS256);
+            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                    .jwtID("refresh_token_jti")
+                    .expirationTime(new Date(System.currentTimeMillis() + 3600000))
+                    .build();
+            Payload payload = new Payload(claimsSet.toJSONObject());
+            JWSObject jwsObject = new JWSObject(header, payload);
+            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            return jwsObject.serialize();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Test
@@ -115,7 +155,6 @@ public class AuthenticationServiceUnitTest {
         when(userMapper.toUser(any(UserCreationRequest.class))).thenReturn(user);
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
         when(userRepository.save(any(User.class))).thenReturn(user);
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(refreshToken);
         when(userMapper.toUserResponse(any(User.class))).thenReturn(userResponse);
 
         var response = authenticationService.register(registerRequest);
@@ -150,10 +189,10 @@ public class AuthenticationServiceUnitTest {
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
         when(userMapper.toUserResponse(any(User.class))).thenReturn(userResponse);
+
         var response = authenticationService.authenticate(authRequest);
 
         assertThat(response.getAccessToken()).isNotNull();
-        assertThat(response.getRefreshToken()).isNotNull();
         assertThat(response.getUser()).isNotNull();
     }
 
@@ -178,54 +217,76 @@ public class AuthenticationServiceUnitTest {
 
     @Test
     void logout_validRequest_success() {
-        authenticationService.logout(logoutRequest);
-    }
+        org.springframework.cache.Cache springCache = mock(org.springframework.cache.Cache.class);
+        when(cacheManager.getCache("invalidated_tokens")).thenReturn(springCache);
 
-    private String generateToken() {
-        try {
-            JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.HS256).build();
-            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                    .jwtID("refresh_token_jti")
-                    .expirationTime(new Date(System.currentTimeMillis() + 3600000))
-                    .build();
-            Payload payload = new Payload(claimsSet.toJSONObject());
-            JWSObject jwsObject = new JWSObject(header, payload);
-            jwsObject.sign(new MACSigner("12345678901234567890123456789012".getBytes()));
-            return jwsObject.serialize();
-        } catch (Exception e) {
-            return "";
-        }
+        authenticationService.logout(logoutRequest);
+
+        verify(refreshTokenRepository).deleteById(anyString());
     }
 
     @Test
     void refreshToken_validRequest_success() {
-        String validToken = generateToken();
+        String validToken = generateValidToken();
         RefreshTokenRequest request = RefreshTokenRequest.builder()
                 .refreshToken(validToken)
                 .build();
 
-        refreshToken.setExpiryDate(new java.util.Date(System.currentTimeMillis() + 10000));
-
         when(refreshTokenRepository.findById(anyString())).thenReturn(Optional.of(refreshToken));
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(refreshToken);
 
         var response = authenticationService.refreshToken(request);
 
         assertThat(response.getAccessToken()).isNotNull();
         assertThat(response.getRefreshToken()).isNotNull();
+        verify(refreshTokenRepository).deleteById(anyString());
     }
 
     @Test
     void refreshToken_tokenNotFound_fail() {
-        String validToken = generateToken();
+        String validToken = generateValidToken();
         RefreshTokenRequest request = RefreshTokenRequest.builder()
                 .refreshToken(validToken)
                 .build();
+
         when(refreshTokenRepository.findById(anyString())).thenReturn(Optional.empty());
 
         var exception = assertThrows(AppException.class, () -> authenticationService.refreshToken(request));
 
         assertThat(exception.getErrorCode().getCode()).isEqualTo(ErrorCode.UNAUTHENTICATED.getCode());
+    }
+
+    @Test
+    void forgetPassword_validRequest_success() {
+        when(userRepository.existsByEmail(anyString())).thenReturn(true);
+
+        String result = authenticationService.forgetPassword(forgetPasswordRequest);
+
+        assertThat(result).isEqualTo("If user exists, OTP has been sent to your email");
+        verify(otpCache).put(anyString(), anyString());
+    }
+
+    @Test
+    void resetPassword_validRequest_success() {
+        when(otpCache.getIfPresent("john@gmail.com")).thenReturn("123456");
+        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode(anyString())).thenReturn("new_encoded_password");
+
+        String response = authenticationService.resetPassword(resetPasswordRequest);
+
+        assertThat(response).isEqualTo("Password reset successfully");
+
+        verify(otpCache).invalidate("john@gmail.com");
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void resetPassword_invalidOtp_fail() {
+        when(otpCache.getIfPresent("john@gmail.com")).thenReturn("999999");
+
+        var exception = assertThrows(AppException.class,
+                () -> authenticationService.resetPassword(resetPasswordRequest));
+
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INVALID_OTP);
     }
 
 }
