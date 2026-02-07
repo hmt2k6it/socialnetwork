@@ -16,8 +16,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.socialnetwork.module.identity.dto.request.AuthenticationRequest;
+import com.example.socialnetwork.module.identity.dto.request.ForgetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.LogoutRequest;
 import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest;
+import com.example.socialnetwork.module.identity.dto.request.ResetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
 import com.example.socialnetwork.module.identity.dto.response.UserResponse;
@@ -43,6 +45,8 @@ public class AuthenticationControllerUnitTest {
         private RefreshTokenRequest refreshTokenRequest;
         private LogoutRequest logoutRequest;
         private AuthenticationResponse authResponse;
+        private ForgetPasswordRequest forgetPasswordRequest;
+        private ResetPasswordRequest resetPasswordRequest;
 
         @BeforeEach
         void initData() {
@@ -71,6 +75,8 @@ public class AuthenticationControllerUnitTest {
                                                 .email("john@gmail.com")
                                                 .build())
                                 .build();
+                forgetPasswordRequest = new ForgetPasswordRequest("john@gmail.com");
+                resetPasswordRequest = new ResetPasswordRequest("john@gmail.com", "otp", "123456", "");
 
         }
 
@@ -131,4 +137,32 @@ public class AuthenticationControllerUnitTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code").value(200));
         }
+
+        @Test
+        void forgetPassword_validRequest_success() throws Exception {
+                when(authenticationService.forgetPassword(any(ForgetPasswordRequest.class)))
+                                .thenReturn("If user exists, OTP has been sent to your email");
+
+                mockMvc.perform(post("/api/v1/auth/forget-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(forgetPasswordRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.result")
+                                                .value("If user exists, OTP has been sent to your email"));
+        }
+
+        @Test
+        void resetPassword_validRequest_success() throws Exception {
+                when(authenticationService.resetPassword(any(ResetPasswordRequest.class)))
+                                .thenReturn("Password has been reset successfully");
+
+                mockMvc.perform(post("/api/v1/auth/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(resetPasswordRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.result").value("Password has been reset successfully"));
+        }
+
 }

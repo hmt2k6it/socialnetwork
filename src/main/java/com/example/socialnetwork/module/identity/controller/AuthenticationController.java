@@ -7,8 +7,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.socialnetwork.common.dto.response.ApiResponse;
 import com.example.socialnetwork.module.identity.dto.request.AuthenticationRequest;
+import com.example.socialnetwork.module.identity.dto.request.ForgetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.LogoutRequest;
 import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest;
+import com.example.socialnetwork.module.identity.dto.request.ResetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
 import com.example.socialnetwork.module.identity.service.AuthenticationService;
@@ -48,6 +50,20 @@ public class AuthenticationController {
     public ApiResponse<AuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
         return ApiResponse.<AuthenticationResponse>builder()
                 .result(authenticationService.refreshToken(request))
+                .build();
+    }
+
+    @PostMapping("/forget-password")
+    public ApiResponse<String> forgetPassword(@RequestBody ForgetPasswordRequest request) {
+        return ApiResponse.<String>builder()
+                .result(authenticationService.forgetPassword(request))
+                .build();
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+        return ApiResponse.<String>builder()
+                .result(authenticationService.resetPassword(request))
                 .build();
     }
 
