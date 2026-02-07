@@ -43,6 +43,7 @@ public class GlobalException {
 
             attributes = constraintViolation.getConstraintDescriptor().getAttributes();
         } catch (IllegalArgumentException exception) {
+            log.warn(exception.getMessage());
         }
         var message = String.format(errorCode.getMessage(), attributes.get("min"), attributes.get("max"));
         return ResponseEntity.status(errorCode.getStatus())

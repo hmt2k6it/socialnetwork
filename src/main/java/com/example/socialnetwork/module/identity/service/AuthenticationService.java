@@ -142,8 +142,7 @@ public class AuthenticationService {
         if (userRepository.existsByEmail(email)) {
             String otp = generateOtp();
             otpCache.put(email, otp);
-            log.info("OTP: {}", otp);
-            // Send OTP to email
+            // TODO: Send OTP to email via EmailService
         }
         return "If user exists, OTP has been sent to your email";
     }
