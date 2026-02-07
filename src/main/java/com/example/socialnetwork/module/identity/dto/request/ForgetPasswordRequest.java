@@ -1,5 +1,6 @@
 package com.example.socialnetwork.module.identity.dto.request;
 
+import jakarta.validation.constraints.Email;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,5 +14,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ForgetPasswordRequest {
+    @Email(message = "INVALID_EMAIL")
     String email;
 }
