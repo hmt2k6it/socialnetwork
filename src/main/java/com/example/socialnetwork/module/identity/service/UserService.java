@@ -1,13 +1,13 @@
 package com.example.socialnetwork.module.identity.service;
 
-import org.springframework.stereotype.Service;
+import com.example.socialnetwork.module.identity.dto.request.UserUpdateRequest;
+import com.example.socialnetwork.module.identity.dto.response.UserPrivateResponse;
+import com.example.socialnetwork.module.identity.dto.response.UserPublicResponse;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
+public interface UserService {
+    UserPrivateResponse getMyProfile();
 
-@Service
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class UserService {
+    UserPrivateResponse updateMyProfile(UserUpdateRequest userUpdateRequest);
+
+    UserPublicResponse getUserProfile(String userId);
 }
