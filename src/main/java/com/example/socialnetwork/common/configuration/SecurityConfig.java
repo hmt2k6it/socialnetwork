@@ -22,12 +22,15 @@ import lombok.AccessLevel;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SecurityConfig {
     CustomJwtDecoder customJwtDecoder;
-    String[] PUBLIC_ENDPOINT = {
+    String[] PUBLIC_POST_ENDPOINT = {
             "/api/v1/auth/login",
             "/api/v1/auth/register",
             "/api/v1/auth/refresh-token",
             "/api/v1/auth/forget-password",
             "/api/v1/auth/reset-password",
+    };
+    String[] PUBLIC_GET_ENDPOINT = {
+            "/api/v1/users/{userId}",
     };
 
     @Bean
@@ -38,7 +41,8 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(request -> request
-                .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINT).permitAll()
+                .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINT).permitAll()
+                .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINT).permitAll()
                 .anyRequest().authenticated());
         http.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer
                 .decoder(customJwtDecoder)

@@ -181,7 +181,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .user(hasUser ? userMapper.toUserResponse(user) : null)
+                .user(hasUser ? userMapper.toUserPrivateResponse(user) : null)
                 .build();
     }
 

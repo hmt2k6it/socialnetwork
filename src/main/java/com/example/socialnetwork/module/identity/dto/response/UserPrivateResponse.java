@@ -5,28 +5,23 @@ import java.util.Set;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
-@Builder
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserResponse {
+public class UserPrivateResponse extends UserPublicResponse {
     String userId;
     String username;
-    String firstName;
-    String lastName;
     String email;
     String phoneNumber;
-    String avatar;
-    String bio;
-    String country;
-    String gender;
-    LocalDate dob;
     Set<String> roles;
     LocalDate createdAt;
     LocalDate updatedAt;

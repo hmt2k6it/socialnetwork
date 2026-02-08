@@ -1,24 +1,25 @@
 package com.example.socialnetwork.module.identity.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import java.time.LocalDate;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.experimental.SuperBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class AuthenticationResponse {
-    @Builder.Default
-    boolean authenticated = true;
-    String accessToken;
-    String refreshToken;
-    UserPrivateResponse user;
+public class UserPublicResponse {
+    String firstName;
+    String lastName;
+    String avatar;
+    String bio;
+    String country;
+    String gender;
+    LocalDate dob;
 }
