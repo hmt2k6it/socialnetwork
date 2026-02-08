@@ -20,5 +20,5 @@ public class AuthenticationResponse {
     boolean authenticated = true;
     String accessToken;
     String refreshToken;
-    UserResponse user;
+    UserPrivateResponse user;
 }

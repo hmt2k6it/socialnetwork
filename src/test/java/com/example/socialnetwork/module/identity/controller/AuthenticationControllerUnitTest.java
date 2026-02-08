@@ -22,7 +22,7 @@ import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest
 import com.example.socialnetwork.module.identity.dto.request.ResetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
-import com.example.socialnetwork.module.identity.dto.response.UserResponse;
+import com.example.socialnetwork.module.identity.dto.response.UserPrivateResponse;
 import com.example.socialnetwork.module.identity.service.AuthenticationService;
 
 import tools.jackson.databind.ObjectMapper;
@@ -68,7 +68,7 @@ public class AuthenticationControllerUnitTest {
                 authResponse = AuthenticationResponse.builder()
                                 .accessToken("access_token")
                                 .refreshToken("refresh_token")
-                                .user(UserResponse.builder()
+                                .user(UserPrivateResponse.builder()
                                                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
                                                 .username("nlnq28062007")
                                                 .firstName("Nguyen Lam Nhu")

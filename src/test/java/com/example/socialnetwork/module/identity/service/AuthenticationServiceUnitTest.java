@@ -31,7 +31,7 @@ import com.example.socialnetwork.module.identity.dto.request.RefreshTokenRequest
 import com.example.socialnetwork.module.identity.dto.request.ResetPasswordRequest;
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
-import com.example.socialnetwork.module.identity.dto.response.UserResponse;
+import com.example.socialnetwork.module.identity.dto.response.UserPrivateResponse;
 import com.example.socialnetwork.module.identity.entity.RefreshToken;
 import com.example.socialnetwork.module.identity.entity.Role;
 import com.example.socialnetwork.module.identity.entity.User;
@@ -70,7 +70,7 @@ public class AuthenticationServiceUnitTest {
     UserCreationRequest registerRequest;
     AuthenticationRequest authRequest;
     AuthenticationResponse authenticationResponse;
-    UserResponse userResponse;
+    UserPrivateResponse userResponse;
     User user;
     Role role;
     RefreshToken refreshToken;
@@ -107,7 +107,7 @@ public class AuthenticationServiceUnitTest {
                 .roles(Set.of(role))
                 .build();
 
-        userResponse = UserResponse.builder()
+        userResponse = UserPrivateResponse.builder()
                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")
                 .username("nlnq28062007")
                 .build();
@@ -159,7 +159,7 @@ public class AuthenticationServiceUnitTest {
         when(userMapper.toUser(any(UserCreationRequest.class))).thenReturn(user);
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
         when(userRepository.save(any(User.class))).thenReturn(user);
-        when(userMapper.toUserResponse(any(User.class))).thenReturn(userResponse);
+        when(userMapper.toUserPrivateResponse(any(User.class))).thenReturn(userResponse);
 
         var response = authenticationService.register(registerRequest);
 
@@ -192,7 +192,7 @@ public class AuthenticationServiceUnitTest {
     void authenticate_validRequest_success() {
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(userMapper.toUserResponse(any(User.class))).thenReturn(userResponse);
+        when(userMapper.toUserPrivateResponse(any(User.class))).thenReturn(userResponse);
 
         var response = authenticationService.authenticate(authRequest);
 
