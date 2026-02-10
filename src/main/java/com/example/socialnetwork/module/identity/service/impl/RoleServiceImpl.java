@@ -28,12 +28,12 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public List<RoleResponse> getAllRoles() {
-        return roleRepository.findAll().stream().map(arg0 -> roleMapper.toRoleResponse(arg0)).toList();
+        return roleRepository.findAll().stream().map(roleMapper::toRoleResponse).toList();
     }
 
     @Override
-    public RoleResponse getRoleById(String id) {
-        Role role = roleRepository.findById(id)
+    public RoleResponse getRoleById(String name) {
+        Role role = roleRepository.findById(name)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         return roleMapper.toRoleResponse(role);
     }
@@ -41,14 +41,17 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RoleResponse createRole(RoleCreationRequest request) {
+        if (roleRepository.existsById(request.getName())) {
+            throw new  AppException(ErrorCode.ROLE_EXIST);
+        }
         Role role = roleMapper.toRole(request);
         return roleMapper.toRoleResponse(roleRepository.save(role));
     }
 
     @Override
     @Transactional
-    public String deleteRole(String id) {
-        roleRepository.deleteById(id);
+    public String deleteRole(String name) {
+        roleRepository.deleteById(name);
         return "Role deleted successfully";
     }
 

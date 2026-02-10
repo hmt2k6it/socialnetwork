@@ -14,13 +14,13 @@ public interface RoleService {
     List<RoleResponse> getAllRoles();
 
     @PreAuthorize("hasRole('ADMIN')")
-    RoleResponse getRoleById(String id);
+    RoleResponse getRoleById(String name);
 
     @PreAuthorize("hasRole('ADMIN')")
     RoleResponse createRole(RoleCreationRequest role);
 
     @PreAuthorize("hasRole('ADMIN')")
-    String deleteRole(String id);
+    String deleteRole(String name);
 
     @PreAuthorize("hasRole('ADMIN')")
     RoleResponse assignPermissionToRole(String roleId, Set<Permission> permissions);
