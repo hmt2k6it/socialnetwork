@@ -32,6 +32,7 @@ import com.example.socialnetwork.module.identity.dto.request.ResetPasswordReques
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.dto.response.AuthenticationResponse;
 import com.example.socialnetwork.module.identity.dto.response.UserPrivateResponse;
+import com.example.socialnetwork.module.identity.entity.Permission;
 import com.example.socialnetwork.module.identity.entity.RefreshToken;
 import com.example.socialnetwork.module.identity.entity.Role;
 import com.example.socialnetwork.module.identity.entity.User;
@@ -73,6 +74,7 @@ public class AuthenticationServiceUnitTest {
     UserPrivateResponse userResponse;
     User user;
     Role role;
+    Permission permission;
     RefreshToken refreshToken;
     LogoutRequest logoutRequest;
     ForgetPasswordRequest forgetPasswordRequest;
@@ -94,7 +96,8 @@ public class AuthenticationServiceUnitTest {
                 "nlqn28062007@gmail.com", "03475647566", "Binh Duong", "FEMALE", null);
         authRequest = new AuthenticationRequest("nlnq28062007", "Nlnq28062007@gmail.com");
 
-        role = Role.builder().name("USER").build();
+        permission = Permission.builder().name("USER_READ").build();
+        role = Role.builder().name("USER").permissions(Set.of(permission)).build();
 
         user = User.builder()
                 .userId("cf0600f5-388d-4299-bddc-d57367b6670e")

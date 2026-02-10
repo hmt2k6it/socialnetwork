@@ -32,7 +32,8 @@ public enum ErrorCode {
         INVALID_EMAIL(2011, "Invalid email", HttpStatus.BAD_REQUEST),
         INVALID_DOB(2012, "Invalid date of birth, you must be at least 18 years old and at most 100 years old",
                         HttpStatus.BAD_REQUEST),
-        TOO_MANY_REQUESTS(2013, "Too many requests, please try again later", HttpStatus.TOO_MANY_REQUESTS);
+        TOO_MANY_REQUESTS(2013, "Too many requests, please try again later", HttpStatus.TOO_MANY_REQUESTS),
+        ROLE_EXIST(2014,"Role already exists" , HttpStatus.BAD_REQUEST);
 
         int code;
         String message;
