@@ -1,8 +1,11 @@
 package com.example.socialnetwork.module.identity.service.impl;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+
+import com.example.socialnetwork.module.identity.dto.request.AssignRoleRequest;
+import com.example.socialnetwork.module.identity.repository.PermissionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,17 +28,11 @@ import lombok.experimental.FieldDefaults;
 public class RoleServiceImpl implements RoleService {
     RoleRepository roleRepository;
     RoleMapper roleMapper;
+    PermissionRepository permissionRepository;
 
     @Override
     public List<RoleResponse> getAllRoles() {
         return roleRepository.findAll().stream().map(roleMapper::toRoleResponse).toList();
-    }
-
-    @Override
-    public RoleResponse getRoleById(String name) {
-        Role role = roleRepository.findById(name)
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-        return roleMapper.toRoleResponse(role);
     }
 
     @Override
@@ -57,10 +54,14 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional
-    public RoleResponse assignPermissionToRole(String id, Set<Permission> permissions) {
+    public RoleResponse assignPermissionToRole(String id, AssignRoleRequest request) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-        role.setPermissions(permissions);
+        List<Permission> permissions = permissionRepository.findAllById(request.getPermissions());
+        if (permissions.size() != request.getPermissions().size()) {
+            throw new AppException(ErrorCode.PERMISSION_NOT_FOUND);
+        }
+        role.setPermissions(new HashSet<>(permissions));
         return roleMapper.toRoleResponse(roleRepository.save(role));
     }
 

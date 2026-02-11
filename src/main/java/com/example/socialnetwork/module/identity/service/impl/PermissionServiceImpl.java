@@ -2,6 +2,8 @@ package com.example.socialnetwork.module.identity.service.impl;
 
 import java.util.List;
 
+import com.example.socialnetwork.common.exception.AppException;
+import com.example.socialnetwork.common.exception.ErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,9 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     @Transactional
     public PermissionResponse createPermission(PermissionCreationRequest request) {
+        if (permissionRepository.existsById(request.getName())) {
+            throw new AppException(ErrorCode.PERMISSION_EXIST);
+        }
         Permission permission = permissionRepository.save(permissionMapper.toPermission(request));
         return permissionMapper.toPermissionResponse(permission);
     }
