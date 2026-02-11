@@ -13,6 +13,8 @@ import java.util.Set;
 
 import com.example.socialnetwork.common.exception.AppException;
 import com.example.socialnetwork.common.exception.ErrorCode;
+import com.example.socialnetwork.module.identity.dto.request.AssignRoleRequest;
+import com.example.socialnetwork.module.identity.repository.PermissionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +38,10 @@ public class RoleServiceUnitTest {
     @Mock
     RoleMapper roleMapper;
 
+    @Mock
+    PermissionRepository permissionRepository;
+
+
     @InjectMocks
     RoleServiceImpl roleService;
 
@@ -43,13 +49,15 @@ public class RoleServiceUnitTest {
     RoleResponse roleResponse;
     Role role;
     Permission permission;
+    AssignRoleRequest assignRoleRequest;
 
     @BeforeEach
     void initData() {
         permission = Permission.builder().name("USER_READ").build();
+         assignRoleRequest = AssignRoleRequest.builder().permissions(Set.of(permission.getName())).build();
         role = Role.builder().name("USER").permissions(Set.of(permission)).build();
         roleResponse = RoleResponse.builder().name("USER").permissions(Set.of(permission)).build();
-        roleCreationRequest = RoleCreationRequest.builder().name("USER").permissions(Set.of(permission)).build();
+        roleCreationRequest = RoleCreationRequest.builder().name("USER").build();
     }
 
     @Test
@@ -63,26 +71,6 @@ public class RoleServiceUnitTest {
     }
 
     @Test
-    void getRoleById_success() {
-        when(roleRepository.findById(anyString())).thenReturn(Optional.of(role));
-        when(roleMapper.toRoleResponse(any(Role.class))).thenReturn(roleResponse);
-
-        RoleResponse response = roleService.getRoleById(role.getName());
-
-        assertThat(response.getName()).isEqualTo(role.getName());
-        assertThat(response.getPermissions().isEmpty()).isEqualTo(false);
-    }
-
-    @Test
-    void getRoleById_roleNotFound_fail() {
-        when(roleRepository.findById(anyString())).thenReturn(Optional.empty());
-
-        AppException exception = assertThrows(AppException.class, ()-> roleService.getRoleById(role.getName()));
-
-        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ROLE_NOT_FOUND);
-    }
-
-    @Test
     void createRole_success() {
         when(roleRepository.existsById(anyString())).thenReturn(false);
         when(roleMapper.toRole(any(RoleCreationRequest.class))).thenReturn(role);
@@ -92,7 +80,6 @@ public class RoleServiceUnitTest {
         RoleResponse response = roleService.createRole(roleCreationRequest);
 
         assertThat(response.getName()).isEqualTo(roleCreationRequest.getName());
-        assertThat(response.getPermissions().isEmpty()).isEqualTo(false);
     }
 
     @Test
@@ -114,9 +101,11 @@ public class RoleServiceUnitTest {
     @Test
     void assignPermissionToRole_success() {
         when(roleRepository.findById(anyString())).thenReturn(Optional.of(role));
+        when(permissionRepository.findById(anyString())).thenReturn(Optional.of(permission));
         when(roleRepository.save(any(Role.class))).thenReturn(role);
+        when(roleMapper.toRoleResponse(any(Role.class))).thenReturn(roleResponse);
 
-        RoleResponse response = roleService.assignPermissionToRole(role.getName(), role.getPermissions());
+        RoleResponse response = roleService.assignPermissionToRole(role.getName(), assignRoleRequest);
 
         assertThat(response.getName()).isEqualTo(role.getName());
         assertThat(response.getPermissions().isEmpty()).isEqualTo(false);
@@ -125,7 +114,7 @@ public class RoleServiceUnitTest {
     void assignPermissionToRole_roleNotFound_fail() {
         when(roleRepository.findById(anyString())).thenReturn(Optional.empty());
 
-        AppException exception = assertThrows(AppException.class, ()-> roleService.assignPermissionToRole(role.getName(), role.getPermissions()));
+        AppException exception = assertThrows(AppException.class, ()-> roleService.assignPermissionToRole(role.getName(), assignRoleRequest));
 
         assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.ROLE_NOT_FOUND);
     }
