@@ -2,13 +2,8 @@ package com.example.socialnetwork.module.identity.controller;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.socialnetwork.module.identity.dto.request.AssignRoleRequest;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.socialnetwork.common.dto.response.ApiResponse;
 import com.example.socialnetwork.module.identity.dto.request.RoleCreationRequest;
@@ -41,17 +36,17 @@ public class RoleController {
                 .build();
     }
 
-    @GetMapping("/{roleName}")
-    public ApiResponse<RoleResponse> getRoleById(@PathVariable String roleName) {
-        return ApiResponse.<RoleResponse>builder()
-                .result(roleService.getRoleById(roleName))
-                .build();
-    }
-
     @DeleteMapping("/{roleName}")
     public ApiResponse<String> deleteRole(@PathVariable String roleName) {
         return ApiResponse.<String>builder()
                 .result(roleService.deleteRole(roleName))
+                .build();
+    }
+
+    @PutMapping("/{roleName}")
+    public ApiResponse<RoleResponse> assignPermissionToRole(@PathVariable String roleName, @RequestBody AssignRoleRequest request) {
+        return ApiResponse.<RoleResponse>builder()
+                .result(roleService.assignPermissionToRole(roleName, request))
                 .build();
     }
 }

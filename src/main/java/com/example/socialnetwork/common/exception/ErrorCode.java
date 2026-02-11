@@ -14,7 +14,8 @@ import lombok.AccessLevel;
 public enum ErrorCode {
         // Common/System errors: 1xxx
         UNCATEGORIZED(1000, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
-        INVALID_KEY(1001, "Invalid key", HttpStatus.BAD_REQUEST),
+        UNAUTHORIZED(1001, "Unauthorized", HttpStatus.UNAUTHORIZED),
+        INVALID_KEY(1002, "Invalid key", HttpStatus.BAD_REQUEST),
         // Identity Module: 2xxx
         USERNAME_EXIST(2001, "Username already exists", HttpStatus.BAD_REQUEST),
         ROLE_NOT_FOUND(2002, "Role not found", HttpStatus.BAD_REQUEST),
@@ -33,7 +34,9 @@ public enum ErrorCode {
         INVALID_DOB(2012, "Invalid date of birth, you must be at least 18 years old and at most 100 years old",
                         HttpStatus.BAD_REQUEST),
         TOO_MANY_REQUESTS(2013, "Too many requests, please try again later", HttpStatus.TOO_MANY_REQUESTS),
-        ROLE_EXIST(2014,"Role already exists" , HttpStatus.BAD_REQUEST);
+        ROLE_EXIST(2014,"Role already exists" , HttpStatus.BAD_REQUEST),
+        PERMISSION_EXIST(2015,"Permission already exists" ,HttpStatus.BAD_REQUEST ),
+        PERMISSION_NOT_FOUND(2016,"Permission not found" ,HttpStatus.BAD_REQUEST );
 
         int code;
         String message;
