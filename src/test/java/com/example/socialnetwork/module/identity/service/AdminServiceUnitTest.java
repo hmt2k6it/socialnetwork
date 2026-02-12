@@ -60,13 +60,13 @@ public class AdminServiceUnitTest {
 
         user = User.builder()
                 .userId(USER_ID)
-                .username("testuser")
+                .username("nlnq28062007")
                 .roles(new HashSet<>(Set.of(role)))
                 .build();
 
         userPrivateResponse = UserPrivateResponse.builder()
                 .userId(USER_ID)
-                .username("testuser")
+                .username("nlnq28062007")
                 .roles(Set.of(ROLE_NAME))
                 .build();
 

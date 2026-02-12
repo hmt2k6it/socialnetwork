@@ -51,8 +51,8 @@ public class AdminControllerUnitTest {
     void initData() {
         userPrivateResponse = UserPrivateResponse.builder()
                 .userId(USER_ID)
-                .username("testuser")
-                .email("test@example.com")
+                .username("nlnq28062007")
+                .email("nlnq28062007@gmail.com")
                 .roles(Set.of("USER"))
                 .build();
 
