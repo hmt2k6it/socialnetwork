@@ -1,5 +1,6 @@
 package com.example.socialnetwork.module.identity.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.jspecify.annotations.NonNull;
@@ -15,6 +16,12 @@ public interface UserRepository extends JpaRepository<User, String> {
     @EntityGraph(attributePaths = {"roles", "roles.permissions"})
     @NonNull
     Optional<User> findById(String id);
+
+    @Override
+    @EntityGraph(attributePaths = {"roles"})
+    @NonNull
+    List<User> findAll();
+
 
     boolean existsByUsername(String username);
     @EntityGraph(attributePaths = {"roles", "roles.permissions"})
