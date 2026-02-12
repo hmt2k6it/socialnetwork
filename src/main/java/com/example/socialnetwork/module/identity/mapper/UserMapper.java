@@ -20,9 +20,15 @@ public interface UserMapper {
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "banAt", ignore = true)
+    @Mapping(target = "banReason", ignore = true)
+    @Mapping(target = "banned", ignore = true)
+    @Mapping(target = "deleteAt", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+
     User toUser(UserCreationRequest request);
 
-    UserPrivateResponse toUserPrivateResponse(User save);
+    UserPrivateResponse toUserPrivateResponse(User user);
 
     default String map(Role role) {
         return role.getName();
@@ -34,6 +40,11 @@ public interface UserMapper {
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "banned", ignore = true)
+    @Mapping(target = "banAt", ignore = true)
+    @Mapping(target = "banReason", ignore = true)
+    @Mapping(target = "deleted", ignore = true)
+    @Mapping(target = "deleteAt", ignore = true)
     void updateUserFromRequest(UserUpdateRequest userUpdateRequest, @MappingTarget User user);
 
     UserPublicResponse toUserPublicResponse(User user);

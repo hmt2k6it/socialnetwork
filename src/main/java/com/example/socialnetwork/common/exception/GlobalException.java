@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -29,7 +30,6 @@ public class GlobalException {
                         .build());
     }
 
-    @SuppressWarnings("unchecked")
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String enumKey = e.getBindingResult().getFieldError().getDefaultMessage();
@@ -38,7 +38,7 @@ public class GlobalException {
         try {
             errorCode = ErrorCode.valueOf(enumKey);
 
-            var constraintViolation = e.getBindingResult().getAllErrors().getFirst()
+            ConstraintViolation<?> constraintViolation = e.getBindingResult().getAllErrors().get(0)
                     .unwrap(ConstraintViolation.class);
 
             attributes = constraintViolation.getConstraintDescriptor().getAttributes();
@@ -50,6 +50,17 @@ public class GlobalException {
                 .body(ApiResponse.<Void>builder()
                         .code(errorCode.getCode())
                         .message(message)
+                        .build());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
+        log.warn("User being access over role!", e);
+        ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
+        return ResponseEntity.status(errorCode.getStatus())
+                .body(ApiResponse.<Void>builder()
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
                         .build());
     }
 }

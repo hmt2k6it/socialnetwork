@@ -3,8 +3,8 @@ package com.example.socialnetwork.module.identity.service;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import com.example.socialnetwork.module.identity.dto.request.UserCreationRequest;
 import com.example.socialnetwork.module.identity.entity.RefreshToken;
@@ -212,7 +212,12 @@ public class AuthenticationService {
     }
 
     private String buildScope(User user) {
-        return user.getRoles().stream().map(role -> "ROLE_" + role.getName()).collect(Collectors.joining(" "));
+        StringJoiner scopeJoiner = new StringJoiner(" ");
+        user.getRoles().forEach(role -> {
+            scopeJoiner.add("ROLE_" + role.getName());
+            role.getPermissions().forEach(permission -> scopeJoiner.add(permission.getName()));
+        });
+        return scopeJoiner.toString();
     }
 
     private String generateOtp() {

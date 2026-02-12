@@ -26,7 +26,7 @@ public class UserCreationRequest {
     String password;
     String firstName;
     String lastName;
-    @Email
+    @Email(message = "INVALID_EMAIL")
     String email;
     String phoneNumber;
     String country;
