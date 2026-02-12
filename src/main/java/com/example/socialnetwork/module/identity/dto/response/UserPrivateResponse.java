@@ -25,4 +25,9 @@ public class UserPrivateResponse extends UserPublicResponse {
     Set<String> roles;
     LocalDate createdAt;
     LocalDate updatedAt;
+    boolean deleted;
+    LocalDate deleteAt;
+    boolean banned;
+    LocalDate banAt;
+    String banReason;
 }

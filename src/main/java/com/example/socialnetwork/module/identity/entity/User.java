@@ -53,4 +53,11 @@ public class User {
     LocalDateTime createdAt;
     @UpdateTimestamp
     LocalDateTime updatedAt;
+    @Builder.Default
+    boolean deleted = false;
+    LocalDateTime deleteAt;
+    @Builder.Default
+    boolean banned = false;
+    LocalDateTime banAt;
+    String banReason;
 }

@@ -30,7 +30,6 @@ public class GlobalException {
                         .build());
     }
 
-    @SuppressWarnings("unchecked")
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String enumKey = e.getBindingResult().getFieldError().getDefaultMessage();
@@ -39,7 +38,7 @@ public class GlobalException {
         try {
             errorCode = ErrorCode.valueOf(enumKey);
 
-            var constraintViolation = e.getBindingResult().getAllErrors().getFirst()
+            ConstraintViolation<?> constraintViolation = e.getBindingResult().getAllErrors().get(0)
                     .unwrap(ConstraintViolation.class);
 
             attributes = constraintViolation.getConstraintDescriptor().getAttributes();
@@ -53,6 +52,7 @@ public class GlobalException {
                         .message(message)
                         .build());
     }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
         log.warn("User being access over role!", e);
