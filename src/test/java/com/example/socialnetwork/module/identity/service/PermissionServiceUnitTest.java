@@ -71,7 +71,7 @@ public class PermissionServiceUnitTest {
 
         // THEN
         assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getName()).isEqualTo("APPROVE_POST");
+        assertThat(result.get(0).getName()).isEqualTo("APPROVE_POST");
     }
 
     @Test
