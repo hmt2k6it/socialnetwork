@@ -45,9 +45,9 @@ public class UserServiceImpl implements UserService {
                 || authentication instanceof AnonymousAuthenticationToken) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        String username = authentication.getName();
-        User user = userRepository.findById(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        return user;
+        String userId = authentication.getName();
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Override
