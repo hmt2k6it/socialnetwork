@@ -54,6 +54,9 @@ public class UserServiceImpl implements UserService {
     public UserPublicResponse getUserProfile(String userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (user.isBanned() || user.isDeleted()) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
         return userMapper.toUserPublicResponse(user);
     }
 

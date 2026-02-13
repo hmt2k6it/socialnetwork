@@ -87,6 +87,12 @@ public class AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest authenticationRequest) {
         User user = userRepository.findByUsername(authenticationRequest.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (user.isBanned()) {
+            throw new AppException(ErrorCode.USER_BANNED);
+        }
+        if (user.isDeleted()) {
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        }
         if (!passwordEncoder.matches(authenticationRequest.getPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.PASSWORD_INCORRECT);
         }
